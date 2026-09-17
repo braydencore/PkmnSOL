@@ -1,11 +1,11 @@
 {
-  "name": "FIRERED — Fan-Made GBA-Style Adventure",
-  "short_name": "FIRERED",
-  "description": "Fan-made FireRed-style monster-catching RPG in vanilla JS. A single-shot prompt trial of the Claude model Fable 5.",
+  "name": "PkmnSOL — a tiny walking-around demo",
+  "short_name": "PkmnSOL",
+  "description": "A small Game-Boy-style walking demo: Pallet Town, one house, and Route 1.",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#6e0c06",
   "theme_color": "#c81810",
   "icons": [

@@ -3,7 +3,7 @@
 // (so the installed PWA still runs offline). A cache-first strategy here
 // would keep serving whatever was cached on the very first visit forever,
 // fighting every future deploy.
-const CACHE = 'firered-v2';
+const CACHE = 'pkmnsol-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
