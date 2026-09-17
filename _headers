@@ -1,0 +1,11 @@
+# Cloudflare Pages reads this file directly (no build step needed).
+# Mirrors the caching intent in vercel.json for the Vercel deploy path.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=86400
+
+/css/*
+  Cache-Control: public, max-age=86400
