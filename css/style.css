@@ -107,7 +107,13 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  /* On tall phones this box is taller than the game content, so the
+     extra space above/below reads as glass with a subtle scanline/vignette
+     texture (like looking at real screen hardware around the picture)
+     instead of flat, seemingly-broken black. */
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0px, rgba(255,255,255,.02) 1px, transparent 1px, transparent 3px),
+    radial-gradient(ellipse at center, #0a0a0c 0%, #000 75%);
   border: 5px solid #17181c;
   border-radius: 6px;
   box-shadow:
