@@ -507,20 +507,30 @@ body.touch #hint { display: none; }
 .shoulder-btn.left { left: 8px; }
 .shoulder-btn.right { right: 8px; }
 
-/* ===== Portrait blocker ===== */
-#rotate-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: #181820;
-  color: #eee;
-  text-align: center;
-  font-size: 15px;
-  line-height: 2.2;
-  align-items: center;
-  justify-content: center;
-}
+/* ===== Portrait mode — hold it upright, classic-handheld style. =====
+   The game's screen is a fixed landscape shape (it can't get taller), so
+   instead of leaving empty space below it, the control deck grows to fill
+   the rest of a tall phone with big, comfortable touch targets — the
+   overall proportions land close to a classic vertical handheld rather
+   than the wide GBA shell used in landscape. */
 @media (orientation: portrait) {
-  body.touch #rotate-overlay { display: flex; }
+  #console { padding-bottom: 130px; }
+  #touch-controls {
+    padding: 70px 22px 0;
+    align-items: flex-start;
+  }
+  #dpad { width: 208px; height: 208px; }
+  #dpad-hub { left: 70px; top: 70px; width: 68px; height: 68px; }
+  #tc-up, #tc-down    { left: 70px; width: 68px; height: 78px; }
+  #tc-left, #tc-right { top: 70px;  width: 78px; height: 68px; }
+
+  #action-pad { width: 210px; height: 148px; }
+  #tc-a { width: 94px; height: 94px; font-size: 26px; }
+  #tc-b { width: 82px; height: 82px; font-size: 22px; }
+
+  #mid-buttons { transform: rotate(-12deg) translateY(90px); gap: 20px; }
+  #touch-controls .pill { width: 64px; height: 18px; font-size: 7px; }
+
+  #speaker-grille { right: 34px; bottom: 26px; }
+  #speaker-grille span { height: 32px; }
 }

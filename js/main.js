@@ -249,17 +249,6 @@ function setupMobile() {
     e.preventDefault();
   }, { passive: false });
 
-  // Try to lock to landscape where the platform allows it (needs fullscreen
-  // on most Android browsers; harmless no-op elsewhere).
-  const tryLock = () => {
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {});
-      }
-    } catch (e) { /* unsupported — CSS overlay handles portrait */ }
-  };
-  document.addEventListener('touchstart', tryLock, { once: true });
-
   // Wire every on-screen button into the shared Input press/release path
   // (always wired; they're only visible in touch mode).
   document.querySelectorAll('#touch-controls [data-k]').forEach(btn => {
