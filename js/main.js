@@ -4,7 +4,7 @@ const Game = {
   busy: false,
   player: null,
   viewW: 240,     // logical viewport width; widens to match the screen aspect
-  artScale: 1,    // integer art-pixel:device-pixel scale (see applyIntegerScale)
+  artScale: 1,    // whole-number art-pixel:device-pixel scale (see applyPixelScale)
 };
 
 function newPlayer() {
@@ -187,52 +187,43 @@ function setupMobile() {
 
   const hudScaleEl = document.getElementById('hud-scale');
 
-  // The logical viewport WIDENS to match the screen's aspect ratio
-  // (240..360 logical px), then the stage scales to fill it.
-  function updateViewport() {
-    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-    const w = Math.max(240, Math.min(360, Math.round(160 * aspect / 2) * 2));
-    if (Game.viewW !== w) {
-      Game.viewW = w;
-      screenEl.style.width = (w * 3) + 'px';
-      hudScaleEl.style.width = (w * 3) + 'px';
-    }
-  }
-
   // ---- Pixel-perfect scaling ----------------------------------------
-  // The tile art is 32 source pixels per 16 logical pixels, so the game
-  // has a native resolution of (viewW*2 x 320) "art pixels". If those
-  // land on a fractional number of device pixels, every pixel gets
-  // resampled unevenly — some source pixels become 2 screen pixels,
-  // others 3 — which is what makes tile borders, edges and diagonals
-  // (stairs especially) look mangled. It's not the tiles that are wrong,
-  // it's the scale.
+  // The tile art is 32 source pixels per 16 logical pixels, so the game's
+  // native resolution is (viewW*2 x 320) "art pixels". If those land on a
+  // fractional number of device pixels, every pixel is resampled unevenly
+  // — some source pixels become 2 screen pixels, others 3 — which is what
+  // makes tile borders, edges and diagonals (stairs especially) look
+  // mangled. It is not the tiles that are wrong, it is the scale.
   //
-  // So: pick the largest INTEGER art scale that fits in the space the
-  // shell gives the screen, render the canvas at exactly that many
-  // device pixels, and let the screen's bezel absorb the remainder (the
-  // bezel already exists, so this costs nothing visually). The HUD is
-  // authored against a 720x480 design box, so it gets scaled to match
-  // the canvas separately — it's text and boxes, not pixel art, so a
-  // fractional scale there is fine.
-  function applyIntegerScale(shellScale) {
+  // Rather than shrink the DISPLAY until it lands on a whole-number scale
+  // (crisp but wasteful), adapt the GAME'S LOGICAL WIDTH to the device
+  // pixels actually available. The engine already supports a flexible
+  // 240..360 logical viewport, so we pick the whole-number art scale and
+  // the logical width that together consume the screen box exactly. That
+  // gives every device both a full-size screen AND 1:1 pixels.
+  //
+  // The screen box is a FIXED design size (720x480) so none of this feeds
+  // back into the shell layout — no circular dependency.
+  const SCREEN_DESIGN_W = 720;
+
+  function applyPixelScale(shellScale) {
     const dpr = window.devicePixelRatio || 1;
-    const artW = Game.viewW * 2, artH = 320;
-    const designW = Game.viewW * 3;              // the screen box's design width
+    // Device pixels the screen box actually occupies.
+    const deviceW = SCREEN_DESIGN_W * shellScale * dpr;
 
-    // Device pixels the screen box occupies at the current shell scale.
-    const availDevice = designW * shellScale * dpr;
-    const exact = availDevice / artW;
+    // Largest whole-number art scale that still leaves the logical width
+    // at or above its 240 minimum. Below 1:1 (a short, wide desktop
+    // window) fall back to an exact 1/2 so the downsample stays uniform.
+    let n = Math.floor(deviceW / (2 * 240));
+    if (n < 1) n = deviceW >= 240 ? 0.5 : 0.25;
 
-    // Prefer a whole-number upscale. When there genuinely aren't enough
-    // device pixels for even 1:1 (a short, wide desktop window), fall back
-    // to an exact 1/2 so the downsample is at least uniform.
-    let n;
-    if (exact >= 1) n = Math.floor(exact);
-    else if (exact >= 0.5) n = 0.5;
-    else n = exact;
+    // Logical width that makes the canvas consume those device pixels
+    // exactly. Rounded DOWN to an even number so it never overflows.
+    let viewW = Math.floor(deviceW / (2 * n) / 2) * 2;
+    viewW = Math.max(240, Math.min(360, viewW));
+    Game.viewW = viewW;
 
-    const bw = Math.round(artW * n), bh = Math.round(artH * n);
+    const bw = Math.round(viewW * 2 * n), bh = Math.round(320 * n);
     if (cv.width !== bw || cv.height !== bh) {
       cv.width = bw;
       cv.height = bh;
@@ -245,7 +236,7 @@ function setupMobile() {
     const cssH = bh / (shellScale * dpr);
     viewportEl.style.width = cssW + 'px';
     viewportEl.style.height = cssH + 'px';
-    hudScaleEl.style.transform = `scale(${cssW / designW})`;
+    hudScaleEl.style.transform = `scale(${cssW / SCREEN_DESIGN_W})`;
   }
 
   // The game content itself is a fixed landscape shape (480x320) that
@@ -260,7 +251,7 @@ function setupMobile() {
   const DPAD_BASE = 148, MAX_K = 1.6;
   const DECK_CONTENT_BASE_W = 148 + 150 + (52 * 2 + 16);
   const DECK_SIDE_PAD = 24; // #touch-controls' own left+right padding
-  const TARGET_BODY_ASPECT = 0.62; // width:height silhouette of a real vertical handheld (e.g. Game Boy Color)
+  const TARGET_BODY_ASPECT = 0.70; // width:height silhouette of a real vertical handheld (e.g. Game Boy Color)
 
   function layoutDeck(screenW) {
     return Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
@@ -285,7 +276,6 @@ function setupMobile() {
   }
 
   function fitScreen() {
-    updateViewport();
     const vv = window.visualViewport;
     const vw = vv ? vv.width : window.innerWidth;
     const vh = vv ? vv.height : window.innerHeight;
@@ -296,11 +286,11 @@ function setupMobile() {
       screenEl.style.height = '';
     }
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
-    // the current screen size) — scaling the whole console keeps every
+    // the fixed-design screen box) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
     const s = Math.max(0.3, Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight));
     consoleEl.style.transform = `scale(${s})`;
-    applyIntegerScale(s);
+    applyPixelScale(s);
   }
   window.addEventListener('resize', fitScreen);
   window.addEventListener('orientationchange', () => setTimeout(fitScreen, 200));
