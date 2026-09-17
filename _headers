@@ -1,11 +1,10 @@
 # Cloudflare Pages reads this file directly (no build step needed).
-# Mirrors the caching intent in vercel.json for the Vercel deploy path.
+#
+# While this project is still under active development, everything stays
+# on "no-cache" (always revalidate with the server, cheap 304s when
+# unchanged) rather than a long max-age — a long-lived Cache-Control
+# header would hide the next bugfix from anyone who already loaded the
+# page, the same way the old cache-first service worker did.
 
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-/js/*
-  Cache-Control: public, max-age=86400
-
-/css/*
-  Cache-Control: public, max-age=86400
+/*
+  Cache-Control: no-cache
