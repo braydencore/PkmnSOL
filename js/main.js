@@ -251,26 +251,30 @@ function setupMobile() {
   const DPAD_BASE = 148, MAX_K = 1.6;
   const DECK_CONTENT_BASE_W = 148 + 150 + (52 * 2 + 16);
   const DECK_SIDE_PAD = 24; // #touch-controls' own left+right padding
-  const TARGET_BODY_ASPECT = 0.70; // width:height silhouette of a real vertical handheld (e.g. Game Boy Color)
 
   function layoutDeck(screenW) {
     return Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
   }
 
-  function layoutPortrait() {
+  // Size the console's silhouette to match the ACTUAL device's aspect
+  // ratio (not a guessed constant) so fitScreen's scale-to-fit binds on
+  // BOTH width and height at once — no leftover space outside the shell
+  // on any phone. A fixed constant (what this used to be) only happens
+  // to match whichever one device it was tuned against; every other
+  // aspect ratio leaves the console short of the screen on one axis,
+  // which is exactly the black-void-above/below-the-shell bug.
+  function layoutPortrait(vw, vh) {
     const screenW = screenEl.offsetWidth;
     const k = layoutDeck(screenW);
     controlsEl.style.setProperty('--deck-k', k);
 
-    // How much non-screen chrome the body needs, at this deck size, so we
-    // can solve for how tall the SCREEN needs to be to hit the target
-    // body silhouette.
     const consoleWidth = screenW + 52;           // #console's own left+right padding
     const topChrome = shellTop.offsetHeight + 20; // #console's top padding
     const consoleBottomPad = 26;                  // #console's own bottom padding
     const deckHeight = controlsEl.offsetHeight;   // reflects --deck-k already applied above
 
-    const targetBodyHeight = consoleWidth / TARGET_BODY_ASPECT;
+    const deviceAspect = vw / vh;
+    const targetBodyHeight = consoleWidth / deviceAspect;
     const screenH = Math.max(320, targetBodyHeight - topChrome - deckHeight - consoleBottomPad);
     screenEl.style.height = screenH + 'px';
   }
@@ -280,7 +284,7 @@ function setupMobile() {
     const vw = vv ? vv.width : window.innerWidth;
     const vh = vv ? vv.height : window.innerHeight;
     if (vh > vw) {
-      layoutPortrait();
+      layoutPortrait(vw, vh);
     } else {
       controlsEl.style.removeProperty('--deck-k');
       screenEl.style.height = '';
@@ -288,6 +292,9 @@ function setupMobile() {
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
     // the fixed-design screen box) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
+    // In portrait, consoleWidth/consoleHeight now equals vw/vh by
+    // construction, so this binds on BOTH axes simultaneously instead of
+    // being width-bound with leftover height (or vice versa).
     const s = Math.max(0.3, Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight));
     consoleEl.style.transform = `scale(${s})`;
     applyPixelScale(s);
