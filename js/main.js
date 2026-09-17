@@ -194,14 +194,29 @@ function setupMobile() {
 
   function fitScreen() {
     updateViewport();
+    // Prefer visualViewport: on mobile Safari/Chrome, window.innerHeight lags
+    // behind the true visible area while the address bar is animating away,
+    // which briefly overscales the console. visualViewport tracks it live.
+    const vv = window.visualViewport;
+    const vw = vv ? vv.width : window.innerWidth;
+    const vh = vv ? vv.height : window.innerHeight;
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
     // the current screen width) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
-    const s = Math.min(window.innerWidth / consoleEl.offsetWidth, window.innerHeight / consoleEl.offsetHeight);
+    const s = Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight);
     consoleEl.style.transform = `scale(${Math.max(0.3, s)})`;
   }
   window.addEventListener('resize', fitScreen);
   window.addEventListener('orientationchange', () => setTimeout(fitScreen, 200));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitScreen);
+  }
+
+  // iOS Safari ignores the viewport meta's user-scalable=no for pinch-zoom
+  // (an intentional accessibility override) — block it explicitly so a
+  // stray two-finger touch doesn't zoom the page instead of the game.
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('gesturechange', (e) => e.preventDefault());
 
   // F toggles real browser fullscreen on desktop.
   window.addEventListener('keydown', (e) => {
@@ -250,19 +265,87 @@ function setupMobile() {
   }, { passive: false });
 
   // Wire every on-screen button into the shared Input press/release path
-  // (always wired; they're only visible in touch mode).
+  // (always wired; they're only visible in touch mode). The D-pad's touch
+  // handling is special-cased below (drag-across support), so it only gets
+  // mouse bindings here.
+  const dpadEl = document.getElementById('dpad');
   document.querySelectorAll('#touch-controls [data-k]').forEach(btn => {
     const k = btn.dataset.k;
-    const down = (e) => { e.preventDefault(); btn.classList.add('on'); Input.press(k); };
+    const isDpadBtn = dpadEl && dpadEl.contains(btn);
+    const down = (e) => {
+      e.preventDefault(); btn.classList.add('on'); Input.press(k);
+      if (e.type === 'touchstart' && navigator.vibrate) navigator.vibrate(8); // tiny tactile click
+    };
     const up = (e) => { e.preventDefault(); btn.classList.remove('on'); Input.release(k); };
-    btn.addEventListener('touchstart', down, { passive: false });
-    btn.addEventListener('touchend', up, { passive: false });
-    btn.addEventListener('touchcancel', up, { passive: false });
+    if (!isDpadBtn) {
+      btn.addEventListener('touchstart', down, { passive: false });
+      btn.addEventListener('touchend', up, { passive: false });
+      btn.addEventListener('touchcancel', up, { passive: false });
+    }
     btn.addEventListener('mousedown', down);
     btn.addEventListener('mouseup', up);
     btn.addEventListener('mouseleave', (e) => { if (btn.classList.contains('on')) up(e); });
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   });
+
+  // D-pad drag-across: a real virtual d-pad lets you slide your thumb
+  // between directions without lifting it, the way a physical cross does.
+  // The browser keeps routing touch events to whichever button a touch
+  // *started* on, so we track the one finger on the pad ourselves and
+  // re-check which quadrant it's over on every move.
+  if (dpadEl) {
+    const dirBtns = Array.from(dpadEl.querySelectorAll('[data-k]'));
+    let touchId = null;
+    let curKey = null;
+
+    const keyUnder = (x, y) => {
+      const el = document.elementFromPoint(x, y);
+      const btn = el && el.closest && el.closest('#dpad [data-k]');
+      return btn ? btn.dataset.k : null;
+    };
+    const setKey = (k) => {
+      if (k === curKey) return;
+      if (curKey) {
+        Input.release(curKey);
+        const old = dirBtns.find(b => b.dataset.k === curKey);
+        if (old) old.classList.remove('on');
+      }
+      if (k) {
+        Input.press(k);
+        const next = dirBtns.find(b => b.dataset.k === k);
+        if (next) next.classList.add('on');
+        if (navigator.vibrate) navigator.vibrate(6);
+      }
+      curKey = k;
+    };
+
+    dpadEl.addEventListener('touchstart', (e) => {
+      if (touchId !== null) return; // one finger drives the pad at a time
+      const t = e.changedTouches[0];
+      touchId = t.identifier;
+      e.preventDefault();
+      setKey(keyUnder(t.clientX, t.clientY));
+    }, { passive: false });
+
+    dpadEl.addEventListener('touchmove', (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== touchId) continue;
+        e.preventDefault();
+        setKey(keyUnder(t.clientX, t.clientY));
+      }
+    }, { passive: false });
+
+    const endDpadTouch = (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== touchId) continue;
+        setKey(null);
+        touchId = null;
+      }
+    };
+    dpadEl.addEventListener('touchend', endDpadTouch, { passive: false });
+    dpadEl.addEventListener('touchcancel', endDpadTouch, { passive: false });
+  }
+
   fitScreen();
 }
 
