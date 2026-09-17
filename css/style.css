@@ -541,18 +541,10 @@ body.touch #hint { display: none; }
    overall proportions land close to a classic vertical handheld rather
    than the wide GBA shell used in landscape. */
 @media (orientation: portrait) {
-  /* Sizes themselves come from --deck-k (set per-device by layoutDeck() in
-     main.js, based on the actual visible viewport) — this block only
-     handles structure JS doesn't touch: the deck starts right below the
-     screen instead of centering in a fixed-height row, and leftover space
-     becomes bottom shell padding (also set by JS; the fallback here covers
-     the instant before JS first runs). */
-  #touch-controls {
-    padding-top: 30px;
-    align-items: flex-start;
-  }
-  #console { padding-bottom: 100px; }
-
+  /* Button sizes come from --deck-k (set per-device by layoutDeck() in
+     main.js) — the console itself keeps its natural proportions rather
+     than being stretched to fill the phone's height, so any leftover
+     space above/below reads as normal centering, not a broken layout. */
   #speaker-grille { right: 34px; bottom: 26px; }
   #speaker-grille span { height: 32px; }
 }

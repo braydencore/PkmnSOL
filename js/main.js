@@ -195,14 +195,17 @@ function setupMobile() {
   }
 
   // The game screen is a fixed landscape shape (480x320) that can't get
-  // taller, so on a tall phone in portrait there's no way to fill the
-  // screen with more GAME — the only lever left is growing the control
-  // deck to use the rest of the height, the way a real vertical handheld
-  // dedicates most of its body to buttons. Rather than guessing one
-  // breakpoint size, compute the deck scale (--deck-k) that makes the
-  // WHOLE console's aspect ratio match this specific device's, so the fit
-  // is close to perfect on any phone instead of just the one under test.
-  const DPAD_BASE = 148, DECK_TOP_PAD = 30, MAX_K = 2.1;
+  // taller, and the console around it (screen + chrome + deck) has its
+  // own natural, correctly-proportioned shape — trying to stretch that
+  // shape with extra padding to hit an arbitrary height target just
+  // produces a device with an unconvincing blank chin. Instead, only
+  // grow the D-pad/A/B/Start-Select themselves (bigger, more comfortable
+  // touch targets — a real improvement), capped so they never get wider
+  // than the screen, and otherwise leave the console at its natural
+  // size. On a tall phone that means honest dark letterboxing above and
+  // below the device, which reads as a normal centered layout rather
+  // than a broken one.
+  const DPAD_BASE = 148, MAX_K = 1.5;
   // dpad + action-pad + mid-buttons (both pills plus their gap) at k=1,
   // per the CSS calc() rules they're each sized with — used below to make
   // sure the deck itself never grows wider than the screen.
@@ -212,38 +215,11 @@ function setupMobile() {
     const isPortrait = vh > vw;
     if (!isPortrait) {
       controlsEl.style.removeProperty('--deck-k');
-      consoleEl.style.paddingBottom = '';
       return;
     }
-    const consoleWidth = screenEl.offsetWidth + 52;   // #console's left+right padding
-    const topChrome = shellTop.offsetHeight + 20;      // #console's top padding
-    const screenH = screenEl.offsetHeight;
     const screenW = screenEl.offsetWidth;
-
-    const targetHeight = consoleWidth * (vh / vw);
-    let deckBudget = targetHeight - topChrome - screenH - DECK_TOP_PAD;
-    deckBudget = Math.max(DPAD_BASE, deckBudget); // never shrink below the original design size
-
-    // The height budget alone can ask for a deck wider than the screen
-    // (the D-pad, Start/Select and A/B sitting side by side all grow
-    // together) — that would push the whole console wider than the
-    // screen instead of taller, which is the opposite of the point. Cap
-    // k by whichever constraint is tighter.
-    const kFromHeight = deckBudget / DPAD_BASE;
-    const kFromWidth = (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W;
-    const k = Math.max(1, Math.min(MAX_K, kFromHeight, kFromWidth));
+    const k = Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
     controlsEl.style.setProperty('--deck-k', k);
-    // Whatever the width cap leaves on the table becomes bottom shell
-    // bezel rather than button size — but capped to at most the deck's
-    // own height, so on a very tall/narrow phone (where width caps k well
-    // below what the height budget alone would want) that bezel stays a
-    // plausible strip of plastic instead of ballooning into an empty
-    // void below the buttons. Some unused height at the very bottom of
-    // the viewport is a fair trade for that; #wrap centers the console,
-    // so it reads as normal letterboxing, not a broken layout.
-    const deckHeightAtK = DPAD_BASE * k;
-    const leftover = Math.min(Math.max(20, deckBudget - deckHeightAtK), deckHeightAtK);
-    consoleEl.style.paddingBottom = leftover + 'px';
   }
 
   function fitScreen() {
