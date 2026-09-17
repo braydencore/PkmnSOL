@@ -239,15 +239,19 @@ function setupMobile() {
     hudScaleEl.style.transform = `scale(${cssW / SCREEN_DESIGN_W})`;
   }
 
-  // The game content itself is a fixed landscape shape (480x320) that
-  // can't get taller. On a portrait phone, the honest way to give the
-  // WHOLE device a real vertical-handheld silhouette is to let the
-  // screen's own glass/bezel be taller than the active game area —
-  // exactly like a real device's screen border — and center the game
-  // inside it, rather than padding blank plastic below the buttons
-  // (which read as a mistake) or leaving the shell landscape-shaped
-  // (which read as "not vertical"). The D-pad/A/B/Start-Select also
-  // grow, capped so they never exceed the screen's width.
+  // The game content itself is a fixed shape (480x320 design px) that
+  // can't change. To make the WHOLE shell match a device's silhouette —
+  // in EITHER orientation — the screen's own glass/bezel grows beyond the
+  // active game area on whichever axis the device needs: taller on a
+  // portrait phone (letterbox bars above/below, like a real screen
+  // border), or wider on a landscape phone (pillarbox bars on the
+  // sides). Same mechanism, mirrored axis. Growing the D-pad/A/B/Start
+  // -Select can't substitute for this on either axis — they're wider
+  // than tall themselves, so scaling them only ever pushes the console's
+  // shape toward landscape, never toward portrait (verified: doubling
+  // their size moves the ratio the WRONG way for a tall phone). They
+  // still grow for comfortable touch targets, capped so they never
+  // exceed the base screen width.
   const DPAD_BASE = 148, MAX_K = 1.6;
   const DECK_CONTENT_BASE_W = 148 + 150 + (52 * 2 + 16);
   const DECK_SIDE_PAD = 24; // #touch-controls' own left+right padding
@@ -256,44 +260,53 @@ function setupMobile() {
     return Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
   }
 
-  // Size the console's silhouette to match the ACTUAL device's aspect
-  // ratio (not a guessed constant) so fitScreen's scale-to-fit binds on
-  // BOTH width and height at once — no leftover space outside the shell
-  // on any phone. A fixed constant (what this used to be) only happens
-  // to match whichever one device it was tuned against; every other
-  // aspect ratio leaves the console short of the screen on one axis,
-  // which is exactly the black-void-above/below-the-shell bug.
-  function layoutPortrait(vw, vh) {
-    const screenW = screenEl.offsetWidth;
-    const k = layoutDeck(screenW);
+  // Match the console's silhouette to the ACTUAL device's aspect ratio
+  // (not a guessed constant) so fitScreen's scale-to-fit binds on BOTH
+  // width and height at once — no leftover space outside the shell on
+  // any phone, in any orientation. A fixed constant only happens to work
+  // for whichever one device/orientation it was tuned against; every
+  // other aspect ratio leaves the console short of the screen on one
+  // axis — that was the black-void-above/below bug in portrait, and is
+  // the identical bug sideways (huge bars left/right) in landscape.
+  function layoutShell(vw, vh) {
+    const k = layoutDeck(SCREEN_DESIGN_W); // width cap always uses the base design width, not any prior pillarbox/letterbox
     controlsEl.style.setProperty('--deck-k', k);
 
-    const consoleWidth = screenW + 52;           // #console's own left+right padding
     const topChrome = shellTop.offsetHeight + 20; // #console's top padding
     const consoleBottomPad = 26;                  // #console's own bottom padding
     const deckHeight = controlsEl.offsetHeight;   // reflects --deck-k already applied above
 
+    const naturalConsoleW = SCREEN_DESIGN_W + 52; // #console's own left+right padding
+    const naturalConsoleH = topChrome + 480 + deckHeight + consoleBottomPad;
     const deviceAspect = vw / vh;
-    const targetBodyHeight = consoleWidth / deviceAspect;
-    const screenH = Math.max(320, targetBodyHeight - topChrome - deckHeight - consoleBottomPad);
-    screenEl.style.height = screenH + 'px';
+
+    if (deviceAspect < naturalConsoleW / naturalConsoleH) {
+      // Device is taller/narrower than the natural shape: letterbox —
+      // grow the screen's HEIGHT, keep its width at the design base.
+      const targetH = naturalConsoleW / deviceAspect;
+      screenEl.style.height = Math.max(320, targetH - topChrome - deckHeight - consoleBottomPad) + 'px';
+      screenEl.style.width = SCREEN_DESIGN_W + 'px';
+    } else {
+      // Device is wider than the natural shape: pillarbox — grow the
+      // screen's WIDTH instead, keep its height at the game's own size.
+      // #screen already centers #game-viewport on both axes (see CSS),
+      // so widening it here just adds side bars for free.
+      const targetW = naturalConsoleH * deviceAspect;
+      screenEl.style.width = Math.max(SCREEN_DESIGN_W, targetW - 52) + 'px';
+      screenEl.style.height = '480px';
+    }
   }
 
   function fitScreen() {
     const vv = window.visualViewport;
     const vw = vv ? vv.width : window.innerWidth;
     const vh = vv ? vv.height : window.innerHeight;
-    if (vh > vw) {
-      layoutPortrait(vw, vh);
-    } else {
-      controlsEl.style.removeProperty('--deck-k');
-      screenEl.style.height = '';
-    }
+    layoutShell(vw, vh);
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
     // the fixed-design screen box) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
-    // In portrait, consoleWidth/consoleHeight now equals vw/vh by
-    // construction, so this binds on BOTH axes simultaneously instead of
+    // consoleWidth/consoleHeight now equals vw/vh by construction in
+    // either orientation, so this binds on BOTH axes simultaneously instead of
     // being width-bound with leftover height (or vice versa).
     const s = Math.max(0.3, Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight));
     consoleEl.style.transform = `scale(${s})`;
