@@ -4,6 +4,7 @@ const Game = {
   busy: false,
   player: null,
   viewW: 240,     // logical viewport width; widens to match the screen aspect
+  artScale: 1,    // integer art-pixel:device-pixel scale (see applyIntegerScale)
 };
 
 function newPlayer() {
@@ -26,9 +27,12 @@ function mainLoop(ts) {
   requestAnimationFrame(mainLoop);
   const dt = Math.min(0.05, (ts - _last) / 1000);
   _last = ts;
-  // All scenes draw in 240x160 logical space; the canvas is 480x320 so
-  // 32px source art lands at native 1:1 device pixels (crisp).
-  _ctx.setTransform(2, 0, 0, 2, 0, 0);
+  // All scenes draw in logical (viewW x 160) space. The canvas backing is
+  // sized to an exact integer multiple of the native art resolution, so
+  // 2*artScale maps one logical pixel onto a whole number of device
+  // pixels and the 32px source tiles never land on fractional boundaries.
+  const t = 2 * Game.artScale;
+  _ctx.setTransform(t, 0, 0, t, 0, 0);
   if (Game.mode === 'overworld') {
     Overworld.update(dt);
     Overworld.draw(_ctx);
@@ -181,6 +185,8 @@ function setupMobile() {
   const controlsEl = document.getElementById('touch-controls');
   const cv = document.getElementById('game');
 
+  const hudScaleEl = document.getElementById('hud-scale');
+
   // The logical viewport WIDENS to match the screen's aspect ratio
   // (240..360 logical px), then the stage scales to fill it.
   function updateViewport() {
@@ -188,12 +194,58 @@ function setupMobile() {
     const w = Math.max(240, Math.min(360, Math.round(160 * aspect / 2) * 2));
     if (Game.viewW !== w) {
       Game.viewW = w;
-      cv.width = w * 2;          // 2x internal resolution
-      cv.height = 320;
-      _ctx.imageSmoothingEnabled = false; // canvas resize resets ctx state
-      viewportEl.style.width = (w * 3) + 'px';
       screenEl.style.width = (w * 3) + 'px';
+      hudScaleEl.style.width = (w * 3) + 'px';
     }
+  }
+
+  // ---- Pixel-perfect scaling ----------------------------------------
+  // The tile art is 32 source pixels per 16 logical pixels, so the game
+  // has a native resolution of (viewW*2 x 320) "art pixels". If those
+  // land on a fractional number of device pixels, every pixel gets
+  // resampled unevenly — some source pixels become 2 screen pixels,
+  // others 3 — which is what makes tile borders, edges and diagonals
+  // (stairs especially) look mangled. It's not the tiles that are wrong,
+  // it's the scale.
+  //
+  // So: pick the largest INTEGER art scale that fits in the space the
+  // shell gives the screen, render the canvas at exactly that many
+  // device pixels, and let the screen's bezel absorb the remainder (the
+  // bezel already exists, so this costs nothing visually). The HUD is
+  // authored against a 720x480 design box, so it gets scaled to match
+  // the canvas separately — it's text and boxes, not pixel art, so a
+  // fractional scale there is fine.
+  function applyIntegerScale(shellScale) {
+    const dpr = window.devicePixelRatio || 1;
+    const artW = Game.viewW * 2, artH = 320;
+    const designW = Game.viewW * 3;              // the screen box's design width
+
+    // Device pixels the screen box occupies at the current shell scale.
+    const availDevice = designW * shellScale * dpr;
+    const exact = availDevice / artW;
+
+    // Prefer a whole-number upscale. When there genuinely aren't enough
+    // device pixels for even 1:1 (a short, wide desktop window), fall back
+    // to an exact 1/2 so the downsample is at least uniform.
+    let n;
+    if (exact >= 1) n = Math.floor(exact);
+    else if (exact >= 0.5) n = 0.5;
+    else n = exact;
+
+    const bw = Math.round(artW * n), bh = Math.round(artH * n);
+    if (cv.width !== bw || cv.height !== bh) {
+      cv.width = bw;
+      cv.height = bh;
+      _ctx.imageSmoothingEnabled = false; // canvas resize resets ctx state
+    }
+    Game.artScale = n;
+
+    // CSS size that makes those backing pixels map 1:1 onto device pixels.
+    const cssW = bw / (shellScale * dpr);
+    const cssH = bh / (shellScale * dpr);
+    viewportEl.style.width = cssW + 'px';
+    viewportEl.style.height = cssH + 'px';
+    hudScaleEl.style.transform = `scale(${cssW / designW})`;
   }
 
   // The game content itself is a fixed landscape shape (480x320) that
@@ -215,7 +267,7 @@ function setupMobile() {
   }
 
   function layoutPortrait() {
-    const screenW = viewportEl.offsetWidth;
+    const screenW = screenEl.offsetWidth;
     const k = layoutDeck(screenW);
     controlsEl.style.setProperty('--deck-k', k);
 
@@ -246,8 +298,9 @@ function setupMobile() {
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
     // the current screen size) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
-    const s = Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight);
-    consoleEl.style.transform = `scale(${Math.max(0.3, s)})`;
+    const s = Math.max(0.3, Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight));
+    consoleEl.style.transform = `scale(${s})`;
+    applyIntegerScale(s);
   }
   window.addEventListener('resize', fitScreen);
   window.addEventListener('orientationchange', () => setTimeout(fitScreen, 200));

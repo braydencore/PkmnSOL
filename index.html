@@ -55,9 +55,15 @@
          HUD/dialog/menu overlays below, exactly as #screen used to be. -->
     <div id="screen">
       <div id="game-viewport">
-        <!-- 480x320 internal resolution (game logic uses 240x160 via a 2x transform)
-             so 32px source art renders at native detail -->
+        <!-- Backing store is sized by main.js to an exact integer multiple of
+             the native art resolution so pixels never land on fractional
+             device-pixel boundaries. -->
         <canvas id="game" width="480" height="320"></canvas>
+        <!-- The HUD is authored against a 720x480 design box; this wrapper is
+             scaled to match whatever size the canvas ends up, so the dialog
+             and menus stay aligned to the game image. Fractional scaling is
+             fine here — it's text and boxes, not pixel art. -->
+        <div id="hud-scale">
         <div id="screen-glare"></div>
 
         <!-- Battle HUD (info boxes) -->
@@ -91,6 +97,7 @@
 
         <!-- Fade overlay for transitions -->
         <div id="fade"></div>
+        </div><!-- /#hud-scale -->
       </div>
     </div>
 
@@ -129,7 +136,7 @@
   <!-- Bumped by hand on every push so it's unmissable whether a device is
        showing the current deploy or a stale cached one — check this
        number against the latest commit before diagnosing anything else. -->
-  <div id="build-tag">BUILD 12</div>
+  <div id="build-tag">BUILD 13</div>
 </div>
 
 <script src="js/audio.js"></script>

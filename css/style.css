@@ -119,14 +119,27 @@ textarea {
   -webkit-user-select: none;
 }
 
-/* The fixed-size game box (canvas + HUD) — this is the positioned
-   ancestor the dialog/menu/HUD overlays below are placed against. */
+/* The game image area. main.js sizes this to an exact integer multiple of
+   the native art resolution (divided by devicePixelRatio), so the canvas
+   maps 1:1 onto device pixels and the pixel art stays crisp. */
 #game-viewport {
   position: relative;
   width: 720px;
   height: 480px;
   flex: none;
   overflow: hidden;
+}
+
+/* 720x480 design box for the HUD, scaled by main.js to match the canvas —
+   this is the positioned ancestor the dialog/menu/HUD overlays below are
+   placed against. */
+#hud-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 720px;
+  height: 480px;
+  transform-origin: top left;
 }
 
 /* subtle glass highlight across the top-left of the screen */
