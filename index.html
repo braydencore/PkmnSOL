@@ -85,22 +85,30 @@
       <div id="fade"></div>
     </div>
 
-    <!-- Physical-looking control deck: always visible, click OR touch. -->
+    <!-- Physical-looking control deck: always visible, click OR touch.
+         #dpad and #action-pad are resized by JS (their width/height), while
+         the fixed-design-size .pad-inner wrapper is transform-scaled to
+         match — so every button grows as one proportional unit instead of
+         needing separately recalculated offsets. -->
     <div id="touch-controls">
       <div id="dpad">
-        <div id="dpad-hub"></div>
-        <button data-k="up" id="tc-up">&#9650;</button>
-        <button data-k="left" id="tc-left">&#9664;</button>
-        <button data-k="right" id="tc-right">&#9654;</button>
-        <button data-k="down" id="tc-down">&#9660;</button>
+        <div class="pad-inner" id="dpad-inner">
+          <div id="dpad-hub"></div>
+          <button data-k="up" id="tc-up">&#9650;</button>
+          <button data-k="left" id="tc-left">&#9664;</button>
+          <button data-k="right" id="tc-right">&#9654;</button>
+          <button data-k="down" id="tc-down">&#9660;</button>
+        </div>
       </div>
       <div id="mid-buttons">
         <button data-k="select" id="tc-select" class="pill">SELECT</button>
         <button data-k="start" id="tc-start" class="pill">START</button>
       </div>
       <div id="action-pad">
-        <button data-k="b" id="tc-b">B</button>
-        <button data-k="a" id="tc-a">A</button>
+        <div class="pad-inner" id="action-inner">
+          <button data-k="b" id="tc-b">B</button>
+          <button data-k="a" id="tc-a">A</button>
+        </div>
       </div>
     </div>
 

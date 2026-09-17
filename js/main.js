@@ -176,6 +176,8 @@ window.addEventListener('load', () => {
 function setupMobile() {
   const screenEl = document.getElementById('screen');   // the display glass — its width tracks the game's aspect ratio
   const consoleEl = document.getElementById('console'); // the whole GBA shell — this is what scales to fit the window
+  const shellTop = document.getElementById('shell-top');
+  const controlsEl = document.getElementById('touch-controls');
   const cv = document.getElementById('game');
 
   // The logical viewport WIDENS to match the screen's aspect ratio
@@ -192,6 +194,39 @@ function setupMobile() {
     }
   }
 
+  // The game screen is a fixed landscape shape (480x320) that can't get
+  // taller, so on a tall phone in portrait there's no way to fill the
+  // screen with more GAME — the only lever left is growing the control
+  // deck to use the rest of the height, the way a real vertical handheld
+  // dedicates most of its body to buttons. Rather than guessing one
+  // breakpoint size, compute the deck scale (--deck-k) that makes the
+  // WHOLE console's aspect ratio match this specific device's, so the fit
+  // is close to perfect on any phone instead of just the one under test.
+  const DPAD_BASE = 148, DECK_TOP_PAD = 30, MAX_K = 2.1;
+  function layoutDeck(vw, vh) {
+    const isPortrait = vh > vw;
+    if (!isPortrait) {
+      controlsEl.style.removeProperty('--deck-k');
+      consoleEl.style.paddingBottom = '';
+      return;
+    }
+    const consoleWidth = screenEl.offsetWidth + 52;   // #console's left+right padding
+    const topChrome = shellTop.offsetHeight + 20;      // #console's top padding
+    const screenH = screenEl.offsetHeight;
+
+    const targetHeight = consoleWidth * (vh / vw);
+    let deckBudget = targetHeight - topChrome - screenH - DECK_TOP_PAD;
+    deckBudget = Math.max(DPAD_BASE, deckBudget); // never shrink below the original design size
+
+    const k = Math.min(MAX_K, deckBudget / DPAD_BASE);
+    controlsEl.style.setProperty('--deck-k', k);
+    // Whatever the cap leaves on the table becomes bottom shell bezel, so
+    // very tall/narrow screens still land close to the target aspect
+    // instead of the buttons growing past a comfortable size.
+    const leftover = Math.max(20, deckBudget - DPAD_BASE * k);
+    consoleEl.style.paddingBottom = leftover + 'px';
+  }
+
   function fitScreen() {
     updateViewport();
     // Prefer visualViewport: on mobile Safari/Chrome, window.innerHeight lags
@@ -200,6 +235,7 @@ function setupMobile() {
     const vv = window.visualViewport;
     const vw = vv ? vv.width : window.innerWidth;
     const vh = vv ? vv.height : window.innerHeight;
+    layoutDeck(vw, vh);
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
     // the current screen width) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
