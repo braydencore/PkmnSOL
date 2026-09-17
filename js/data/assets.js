@@ -46,7 +46,7 @@ const TILE_SRC_IN = {
   'b': { s: 'indoor', x: 0, y: 608, w: 32, h: 64, base: '_' },
   'G': { s: 'indoor', x: 32, y: 608, w: 32, h: 64, base: '_' },
   'H': { s: 'indoor', x: 176, y: 1232, w: 32, h: 48, base: '_' },
-  'n': { s: 'indoor', x: 32, y: 1280, w: 32, h: 32, base: '_' },
+  'n': { s: 'indoor', x: 32, y: 704, w: 32, h: 64, base: '_' },
   'O': { s: 'outdoor', x: 224, y: 1088, w: 32, h: 32, base: '_' },
   '1': { s: 'indoor', x: 0, y: 400, w: 32, h: 32, base: '_', ball: true },
   '2': { s: 'indoor', x: 0, y: 400, w: 32, h: 32, base: '_', ball: true },
