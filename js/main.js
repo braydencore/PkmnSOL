@@ -174,8 +174,9 @@ window.addEventListener('load', () => {
 
 // ---------------- scaling + fullscreen + touch controls ----------------
 function setupMobile() {
-  const screenEl = document.getElementById('screen');   // the display glass — its width tracks the game's aspect ratio
-  const consoleEl = document.getElementById('console'); // the whole GBA shell — this is what scales to fit the window
+  const screenEl = document.getElementById('screen');       // the visible glass/bezel — can grow TALLER than the game content
+  const viewportEl = document.getElementById('game-viewport'); // fixed-size game box (canvas + HUD); its width tracks the aspect ratio
+  const consoleEl = document.getElementById('console');     // the whole shell — this is what scales to fit the window
   const shellTop = document.getElementById('shell-top');
   const controlsEl = document.getElementById('touch-controls');
   const cv = document.getElementById('game');
@@ -190,49 +191,60 @@ function setupMobile() {
       cv.width = w * 2;          // 2x internal resolution
       cv.height = 320;
       _ctx.imageSmoothingEnabled = false; // canvas resize resets ctx state
+      viewportEl.style.width = (w * 3) + 'px';
       screenEl.style.width = (w * 3) + 'px';
     }
   }
 
-  // The game screen is a fixed landscape shape (480x320) that can't get
-  // taller, and the console around it (screen + chrome + deck) has its
-  // own natural, correctly-proportioned shape — trying to stretch that
-  // shape with extra padding to hit an arbitrary height target just
-  // produces a device with an unconvincing blank chin. Instead, only
-  // grow the D-pad/A/B/Start-Select themselves (bigger, more comfortable
-  // touch targets — a real improvement), capped so they never get wider
-  // than the screen, and otherwise leave the console at its natural
-  // size. On a tall phone that means honest dark letterboxing above and
-  // below the device, which reads as a normal centered layout rather
-  // than a broken one.
-  const DPAD_BASE = 148, MAX_K = 1.5;
-  // dpad + action-pad + mid-buttons (both pills plus their gap) at k=1,
-  // per the CSS calc() rules they're each sized with — used below to make
-  // sure the deck itself never grows wider than the screen.
+  // The game content itself is a fixed landscape shape (480x320) that
+  // can't get taller. On a portrait phone, the honest way to give the
+  // WHOLE device a real vertical-handheld silhouette is to let the
+  // screen's own glass/bezel be taller than the active game area —
+  // exactly like a real device's screen border — and center the game
+  // inside it, rather than padding blank plastic below the buttons
+  // (which read as a mistake) or leaving the shell landscape-shaped
+  // (which read as "not vertical"). The D-pad/A/B/Start-Select also
+  // grow, capped so they never exceed the screen's width.
+  const DPAD_BASE = 148, MAX_K = 1.6;
   const DECK_CONTENT_BASE_W = 148 + 150 + (52 * 2 + 16);
   const DECK_SIDE_PAD = 24; // #touch-controls' own left+right padding
-  function layoutDeck(vw, vh) {
-    const isPortrait = vh > vw;
-    if (!isPortrait) {
-      controlsEl.style.removeProperty('--deck-k');
-      return;
-    }
-    const screenW = screenEl.offsetWidth;
-    const k = Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
+  const TARGET_BODY_ASPECT = 0.62; // width:height silhouette of a real vertical handheld (e.g. Game Boy Color)
+
+  function layoutDeck(screenW) {
+    return Math.max(1, Math.min(MAX_K, (screenW - DECK_SIDE_PAD) / DECK_CONTENT_BASE_W));
+  }
+
+  function layoutPortrait() {
+    const screenW = viewportEl.offsetWidth;
+    const k = layoutDeck(screenW);
     controlsEl.style.setProperty('--deck-k', k);
+
+    // How much non-screen chrome the body needs, at this deck size, so we
+    // can solve for how tall the SCREEN needs to be to hit the target
+    // body silhouette.
+    const consoleWidth = screenW + 52;           // #console's own left+right padding
+    const topChrome = shellTop.offsetHeight + 20; // #console's top padding
+    const consoleBottomPad = 26;                  // #console's own bottom padding
+    const deckHeight = controlsEl.offsetHeight;   // reflects --deck-k already applied above
+
+    const targetBodyHeight = consoleWidth / TARGET_BODY_ASPECT;
+    const screenH = Math.max(320, targetBodyHeight - topChrome - deckHeight - consoleBottomPad);
+    screenEl.style.height = screenH + 'px';
   }
 
   function fitScreen() {
     updateViewport();
-    // Prefer visualViewport: on mobile Safari/Chrome, window.innerHeight lags
-    // behind the true visible area while the address bar is animating away,
-    // which briefly overscales the console. visualViewport tracks it live.
     const vv = window.visualViewport;
     const vw = vv ? vv.width : window.innerWidth;
     const vh = vv ? vv.height : window.innerHeight;
-    layoutDeck(vw, vh);
+    if (vh > vw) {
+      layoutPortrait();
+    } else {
+      controlsEl.style.removeProperty('--deck-k');
+      screenEl.style.height = '';
+    }
     // offsetWidth/Height are the shell's untransformed layout size (chrome +
-    // the current screen width) — scaling the whole console keeps every
+    // the current screen size) — scaling the whole console keeps every
     // button and bezel proportional to the display, like a real device.
     const s = Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight);
     consoleEl.style.transform = `scale(${Math.max(0.3, s)})`;
