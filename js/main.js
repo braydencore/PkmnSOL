@@ -206,37 +206,43 @@ function setupMobile() {
   // back into the shell layout — no circular dependency.
   const SCREEN_DESIGN_W = 720;
 
-  function applyPixelScale(shellScale) {
-    const dpr = window.devicePixelRatio || 1;
-    // Device pixels the screen box actually occupies.
-    const deviceW = SCREEN_DESIGN_W * shellScale * dpr;
+  // The zoom level — how many logical pixels of map are visible at once —
+  // is now completely FIXED, independent of device or dpr. It used to be
+  // derived from "whatever's left over after picking a crisp integer art
+  // scale", which is what made characters look noticeably tinier on some
+  // phones than others: forcing the art scale to be a whole number (1x,
+  // 2x, 3x...) means it has to round to a specific integer for each
+  // device's pixel density, and that rounding can differ by up to 2x
+  // between phones with very similar screens. There is no way to keep
+  // BOTH perfectly crisp nearest-neighbor art AND a perfectly consistent
+  // zoom level across arbitrary device pixel ratios — so this trades a
+  // tiny, generally imperceptible amount of edge softness (smooth, not
+  // nearest-neighbor, downscaling) for a zoom level that never changes.
+  const FIXED_VIEW_W = 256;
+  const SUPERSAMPLE = 4; // generous fixed render resolution; sharp on any real dpr
 
-    // Largest whole-number art scale that still leaves the logical width
-    // at or above its 240 minimum. Below 1:1 (a short, wide desktop
-    // window) fall back to an exact 1/2 so the downsample stays uniform.
-    let n = Math.floor(deviceW / (2 * 240));
-    if (n < 1) n = deviceW >= 240 ? 0.5 : 0.25;
+  // Backing-store size never changes, so this only needs to run once — it's
+  // no longer a function of shellScale/dpr at all (that's the whole fix).
+  function applyPixelScale() {
+    Game.viewW = FIXED_VIEW_W;
+    Game.artScale = SUPERSAMPLE;
 
-    // Logical width that makes the canvas consume those device pixels
-    // exactly. Rounded DOWN to an even number so it never overflows.
-    let viewW = Math.floor(deviceW / (2 * n) / 2) * 2;
-    viewW = Math.max(240, Math.min(360, viewW));
-    Game.viewW = viewW;
-
-    const bw = Math.round(viewW * 2 * n), bh = Math.round(320 * n);
+    const bw = FIXED_VIEW_W * 2 * SUPERSAMPLE, bh = 320 * SUPERSAMPLE;
     if (cv.width !== bw || cv.height !== bh) {
       cv.width = bw;
       cv.height = bh;
       _ctx.imageSmoothingEnabled = false; // canvas resize resets ctx state
     }
-    Game.artScale = n;
+    // The browser resizes this down to its real on-screen size (see the
+    // image-rendering:auto override in css/style.css) — that resize is a
+    // smooth minification, not the nearest-neighbor magnification that
+    // required an integer scale before.
 
-    // CSS size that makes those backing pixels map 1:1 onto device pixels.
-    const cssW = bw / (shellScale * dpr);
-    const cssH = bh / (shellScale * dpr);
-    viewportEl.style.width = cssW + 'px';
-    viewportEl.style.height = cssH + 'px';
-    hudScaleEl.style.transform = `scale(${cssW / SCREEN_DESIGN_W})`;
+    // Canvas always fills the game's fixed design width — same value on
+    // every device, so the HUD overlay (authored against SCREEN_DESIGN_W)
+    // never needs a compensating scale; it's always 1:1.
+    viewportEl.style.width = SCREEN_DESIGN_W + 'px';
+    viewportEl.style.height = (SCREEN_DESIGN_W * (bh / bw)) + 'px';
   }
 
   // The game content itself is a fixed shape (480x320 design px) that
@@ -310,7 +316,7 @@ function setupMobile() {
     // being width-bound with leftover height (or vice versa).
     const s = Math.max(0.3, Math.min(vw / consoleEl.offsetWidth, vh / consoleEl.offsetHeight));
     consoleEl.style.transform = `scale(${s})`;
-    applyPixelScale(s);
+    applyPixelScale();
   }
   window.addEventListener('resize', fitScreen);
   window.addEventListener('orientationchange', () => setTimeout(fitScreen, 200));

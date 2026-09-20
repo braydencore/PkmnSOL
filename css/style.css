@@ -160,10 +160,13 @@ textarea {
 #game {
   position: absolute;
   inset: 0;
-  width: 100%;   /* tracks #screen, which widens with the adaptive viewport */
+  width: 100%;   /* tracks #game-viewport, which is a fixed design size (see main.js) */
   height: 100%;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  /* The backing store is rendered at a fixed, generous supersample and
+     scaled down to its real on-screen size here — a smooth minification,
+     not a nearest-neighbor magnification, so this deliberately does NOT
+     use pixelated/crisp-edges (see applyPixelScale in main.js for why). */
+  image-rendering: auto;
 }
 
 #hint {
