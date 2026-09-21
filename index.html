@@ -5,8 +5,8 @@
     <link rel="icon" type="image/png" href="/assets/logo_1-Bvf4nPyD.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>PoPoSafari</title>
-    <script type="module" crossorigin src="/assets/index-wM3pgn_e.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C1gYGtBD.css">
+    <script type="module" crossorigin src="/assets/index-CMu0AcLi.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bf4Neps8.css">
   </head>
 
   <body>
@@ -44,8 +44,18 @@
       </div>
 
       <div id="speaker-grille"><span></span><span></span><span></span><span></span><span></span></div>
-      <div class="shoulder-btn left">L</div>
-      <div class="shoulder-btn right">R</div>
+      <button type="button" class="shoulder-btn left" data-action="map" aria-label="Map">MAP</button>
+      <button type="button" class="shoulder-btn right" data-action="running" aria-label="Toggle running">RUN</button>
     </div>
+
+    <!-- Shown instead of the console when a touch device is held in
+         portrait (see the `.gba-touch` + orientation scoping in
+         style.css) — the game is a fixed 16:9 landscape shape, so
+         portrait can only ever show a small, letterboxed sliver of it. -->
+    <div id="rotate-prompt">
+      <div id="rotate-icon">&#8635;</div>
+      <p>Rotate your device to play</p>
+    </div>
+
   </body>
 </html>
