@@ -3,13 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/assets/logo_1-Bvf4nPyD.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>PoPoSafari</title>
-    <script type="module" crossorigin src="/assets/index-DrEkM4N8.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CZWpbvA4.css">
+    <script type="module" crossorigin src="/assets/index-DWKU5VuX.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BRfjOOeq.css">
   </head>
 
   <body>
-    <div id="app"></div>
+    <!-- The GBA console shell wraps the game on touch devices (see
+         gba-shell.ts). On desktop/mouse it's inert: #app renders full-window
+         exactly as before, and all the shell chrome below stays hidden via
+         CSS — see the `.gba-touch` scoping in style.css. -->
+    <div id="gba-console">
+      <div id="shell-top">
+        <span id="shell-brand">PoPoSafari</span>
+        <span id="power-dot"></span>
+      </div>
+
+      <div id="screen">
+        <div id="app"></div>
+        <div id="screen-glare"></div>
+      </div>
+
+      <div id="touch-controls">
+        <div id="dpad">
+          <div id="dpad-hub"></div>
+          <button type="button" data-dir="up" id="tc-up" aria-label="Up">&#9650;</button>
+          <button type="button" data-dir="left" id="tc-left" aria-label="Left">&#9664;</button>
+          <button type="button" data-dir="right" id="tc-right" aria-label="Right">&#9654;</button>
+          <button type="button" data-dir="down" id="tc-down" aria-label="Down">&#9660;</button>
+        </div>
+        <div id="mid-buttons">
+          <button type="button" data-action="select" class="pill" aria-label="Select">SELECT</button>
+          <button type="button" data-action="start" class="pill" aria-label="Start">START</button>
+        </div>
+        <div id="action-pad">
+          <button type="button" data-action="b" id="tc-b" aria-label="B">B</button>
+          <button type="button" data-action="a" id="tc-a" aria-label="A">A</button>
+        </div>
+      </div>
+
+      <div id="speaker-grille"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="shoulder-btn left">L</div>
+      <div class="shoulder-btn right">R</div>
+    </div>
   </body>
 </html>
