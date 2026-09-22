@@ -5,7 +5,21 @@
     <link rel="icon" type="image/png" href="/assets/logo_1-Bvf4nPyD.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>PoPoSafari</title>
-    <script type="module" crossorigin src="/assets/index-fp3zR3y-.js"></script>
+
+    <!-- Home-screen "app" install support: with the manifest + these Apple
+         meta tags, adding this page to the iOS/Android home screen launches
+         it with none of the browser's own UI (no URL bar, no tab strip) —
+         that chrome is Safari's own and can't be removed by CSS while the
+         page is open as a normal browser tab; it only goes away once the
+         page is installed and opened from its own home-screen icon. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0a0a0c" />
+    <link rel="apple-touch-icon" href="/ui/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PopoSafari" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <script type="module" crossorigin src="/assets/index-B0aKGpju.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-CxgMmtGQ.css">
   </head>
 
