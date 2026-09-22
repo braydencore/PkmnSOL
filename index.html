@@ -5,53 +5,42 @@
     <link rel="icon" type="image/png" href="/assets/logo_1-Bvf4nPyD.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>PoPoSafari</title>
-    <script type="module" crossorigin src="/assets/index-rEcfhjnN.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Dwm3wTft.css">
+    <script type="module" crossorigin src="/assets/index-fp3zR3y-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CxgMmtGQ.css">
   </head>
 
   <body>
-    <!-- The GBA console shell wraps the game on touch devices (see
-         gba-shell.ts). On desktop/mouse it's inert: #app renders full-window
-         exactly as before, and all the shell chrome below stays hidden via
-         CSS — see the `.gba-touch` scoping in style.css. -->
-    <div id="gba-console">
-      <div id="shell-top">
-        <span id="shell-brand">PoPoSafari</span>
-        <span id="power-dot"></span>
-      </div>
+    <!-- The game canvas fills the whole screen on touch devices, exactly
+         like it does on desktop — no console/bezel chrome around it. -->
+    <div id="app"></div>
 
-      <div id="screen">
-        <div id="app"></div>
-        <div id="screen-glare"></div>
+    <!-- Translucent touch controls floating over the game (see
+         gba-shell.ts for the input wiring). Only visible on touch-primary
+         devices in landscape — see the `.gba-touch` scoping in style.css. -->
+    <div id="touch-controls">
+      <div id="dpad">
+        <div id="dpad-hub"></div>
+        <button type="button" data-dir="up" id="tc-up" aria-label="Up">&#9650;</button>
+        <button type="button" data-dir="left" id="tc-left" aria-label="Left">&#9664;</button>
+        <button type="button" data-dir="right" id="tc-right" aria-label="Right">&#9654;</button>
+        <button type="button" data-dir="down" id="tc-down" aria-label="Down">&#9660;</button>
       </div>
-
-      <div id="touch-controls">
-        <div id="dpad">
-          <div id="dpad-hub"></div>
-          <button type="button" data-dir="up" id="tc-up" aria-label="Up">&#9650;</button>
-          <button type="button" data-dir="left" id="tc-left" aria-label="Left">&#9664;</button>
-          <button type="button" data-dir="right" id="tc-right" aria-label="Right">&#9654;</button>
-          <button type="button" data-dir="down" id="tc-down" aria-label="Down">&#9660;</button>
-        </div>
-        <div id="mid-buttons">
-          <button type="button" data-action="select" class="pill" aria-label="Select">SELECT</button>
-          <button type="button" data-action="start" class="pill" aria-label="Start">START</button>
-        </div>
-        <div id="action-pad">
-          <button type="button" data-action="b" id="tc-b" aria-label="B">B</button>
-          <button type="button" data-action="a" id="tc-a" aria-label="A">A</button>
-        </div>
+      <div id="action-pad">
+        <button type="button" data-action="b" id="tc-b" aria-label="B">B</button>
+        <button type="button" data-action="a" id="tc-a" aria-label="A">A</button>
       </div>
-
-      <div id="speaker-grille"><span></span><span></span><span></span><span></span><span></span></div>
-      <button type="button" class="shoulder-btn left" data-action="map" aria-label="Map">MAP</button>
-      <button type="button" class="shoulder-btn right" data-action="running" aria-label="Toggle running">RUN</button>
+      <div id="mid-buttons">
+        <button type="button" data-action="select" class="pill" aria-label="Select">SELECT</button>
+        <button type="button" data-action="start" class="pill" aria-label="Start">START</button>
+      </div>
+      <button type="button" class="corner-btn top-left" data-action="map" aria-label="Map">MAP</button>
+      <button type="button" class="corner-btn top-right" data-action="running" aria-label="Toggle running">RUN</button>
     </div>
 
-    <!-- Shown instead of the console when a touch device is held in
-         portrait (see the `.gba-touch` + orientation scoping in
-         style.css) — the game is a fixed 16:9 landscape shape, so
-         portrait can only ever show a small, letterboxed sliver of it. -->
+    <!-- Shown instead of the game when a touch device is held in portrait
+         (see the `.gba-touch` + orientation scoping in style.css) — the
+         game is a fixed 16:9 landscape shape, so portrait can only ever
+         show a small, letterboxed sliver of it. -->
     <div id="rotate-prompt">
       <div id="rotate-icon">&#8635;</div>
       <p>Rotate your device to play</p>
