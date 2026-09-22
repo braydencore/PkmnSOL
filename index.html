@@ -19,8 +19,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PopoSafari" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <script type="module" crossorigin src="/assets/index-B0aKGpju.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CxgMmtGQ.css">
+    <script type="module" crossorigin src="/assets/index-DJeoRdzs.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C5_bZlLo.css">
   </head>
 
   <body>
@@ -58,6 +58,24 @@
     <div id="rotate-prompt">
       <div id="rotate-icon">&#8635;</div>
       <p>Rotate your device to play</p>
+    </div>
+
+    <!-- Shown instead of the game on a touch device that hasn't been added
+         to the Home Screen yet — see src/install-gate.ts, which fills in
+         #install-gate-steps and toggles this on via `body.install-gate`
+         before Phaser (or any game asset) ever loads. There's no way to
+         lay the game out well while the browser's own URL bar and tab
+         strip are eating into the viewport on top of it, so touch devices
+         only get the real game once they're running installed. -->
+    <div id="install-gate">
+      <img id="install-gate-icon" src="/ui/apple-touch-icon.png" alt="" />
+      <h1>Add PopoSafari to your Home Screen</h1>
+      <p>
+        The browser's own address bar and tabs leave no room to fit the game properly. Add
+        PopoSafari to your Home Screen and open it from there for the full, correctly-sized
+        experience.
+      </p>
+      <ol id="install-gate-steps"></ol>
     </div>
 
   </body>
