@@ -1,6 +1,6 @@
 {
-  "name": "PopoSafari",
-  "short_name": "PopoSafari",
+  "name": "PkmnSOL",
+  "short_name": "PkmnSOL",
   "description": "A Pokémon-style browser MMO.",
   "start_url": "/",
   "scope": "/",
